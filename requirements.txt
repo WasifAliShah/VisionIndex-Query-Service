@@ -1,0 +1,15 @@
+fastapi==0.110.0
+uvicorn==0.28.0
+pydantic==2.6.4
+python-multipart==0.0.9
+python-dotenv==1.2.1
+qdrant-client==1.16.2
+numpy==1.26.4
+torch==2.9.1
+torchvision==0.24.1
+opencv-python-headless==4.12.0.88
+insightface==0.7.3
+onnxruntime>=1.12.0
+clip==1.0
+# OpenAI CLIP for text-image embeddings
+git+https://github.com/openai/CLIP.git
