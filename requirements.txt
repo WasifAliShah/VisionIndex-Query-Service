@@ -10,6 +10,5 @@ torchvision==0.24.1
 opencv-python-headless==4.12.0.88
 insightface==0.7.3
 onnxruntime>=1.12.0
-clip==1.0
 # OpenAI CLIP for text-image embeddings
-git+https://github.com/openai/CLIP.git
+clip @ git+https://github.com/openai/CLIP.git
