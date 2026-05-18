@@ -1,0 +1,30 @@
+name: Build & Push Query Service
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: server_address
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push query service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: sabbas30/visionindex-frontend:query-service
+          build-args: |
+            QDRANT_URL=${{ secrets.QDRANT_URL }}
+            QUERY_SERVICE_PORT=${{ secrets.QUERY_SERVICE_PORT }}
+            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+            CORS_ALLOW_CREDENTIALS=${{ secrets.CORS_ALLOW_CREDENTIALS }}
