@@ -22,9 +22,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: sabbas30/visionindex-frontend:query-service
-          build-args: |
-            QDRANT_URL=${{ secrets.QDRANT_URL }}
-            QUERY_SERVICE_PORT=${{ secrets.QUERY_SERVICE_PORT }}
-            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
-            CORS_ALLOW_CREDENTIALS=${{ secrets.CORS_ALLOW_CREDENTIALS }}
+          tags: sabbas30/visionindex-frontend:query

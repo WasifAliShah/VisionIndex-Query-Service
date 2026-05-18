@@ -80,7 +80,7 @@ except Exception as e:
 face_analyzer = None
 try:
     from insightface.app import FaceAnalysis
-    face_analyzer = FaceAnalysis(allowed_modules=['detection', 'recognition'])
+    face_analyzer = FaceAnalysis(name='buffalo_l', allowed_modules=['detection', 'recognition'], providers=['CPUExecutionProvider'])
     face_analyzer.prepare(ctx_id=-1, det_size=(640, 640))
     print("✓ InsightFace initialized")
 except Exception as e:
