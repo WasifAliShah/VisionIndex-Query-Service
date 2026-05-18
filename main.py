@@ -22,10 +22,29 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 app = FastAPI(title="Unified Query Service")
 
+# Configure CORS using environment variable `CORS_ORIGINS` (comma-separated)
+# Example: CORS_ORIGINS=http://localhost:5173,https://your-production.com
+_origins_env = os.environ.get("CORS_ORIGINS") or os.environ.get("CORS_ORIGIN")
+if not _origins_env:
+    _origins_env = "http://localhost:5173"
+_origins_env = _origins_env.strip()
+if _origins_env == "*":
+    _origins = ["*"]
+else:
+    _origins = [o.strip() for o in _origins_env.split(",") if o.strip()]
+
+# Allow credentials when explicitly enabled (default: true)
+_cors_allow_credentials_env = os.environ.get("CORS_ALLOW_CREDENTIALS", "true").lower()
+_allow_credentials = _cors_allow_credentials_env in ("1", "true", "yes")
+
+if _origins == ["*"] and _allow_credentials:
+    print("⚠️ CORS_ORIGINS='*' and CORS_ALLOW_CREDENTIALS=true are incompatible. Disabling credentials.")
+    _allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_origins,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
