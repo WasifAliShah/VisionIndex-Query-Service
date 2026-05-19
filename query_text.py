@@ -51,7 +51,50 @@ def extract_text_embedding(clip_model, clip_module, device, text_prompt):
     return text_embedding
 
 
-def _semantic_scroll(client, collection_name, text_embedding, vector_keys, video_id, top_k=10, limit=1000):
+def _apply_object_query_boosts(text_query, payload, base_score):
+    boosted_score = base_score
+    query_lower = text_query.lower()
+    
+    obj_class = str(payload.get("object_class", "")).lower()
+    obj_type = str(payload.get("object_type", "")).lower()
+    obj_name = obj_class + " " + obj_type
+    
+    # Phone / Mobile
+    if any(k in query_lower for k in ["phone", "mobile", "cell"]):
+        if any(k in obj_name for k in ["phone", "mobile", "cell"]):
+            boosted_score += 0.3
+        else:
+            boosted_score -= 0.1
+            
+    # Bags
+    elif any(k in query_lower for k in ["bag", "backpack", "handbag", "suitcase", "luggage", "purse"]):
+        if any(k in obj_name for k in ["bag", "backpack", "handbag", "suitcase", "luggage", "purse"]):
+            boosted_score += 0.3
+        else:
+            boosted_score -= 0.1
+            
+    # Computers / Screens
+    elif any(k in query_lower for k in ["laptop", "computer", "tv", "monitor"]):
+        if any(k in obj_name for k in ["laptop", "computer", "tv", "monitor"]):
+            boosted_score += 0.3
+        else:
+            boosted_score -= 0.1
+            
+    # Colors
+    color_keywords = ["red", "blue", "green", "yellow", "black", "white", "gray", "grey", "brown", "pink", "purple", "orange"]
+    obj_color = str(payload.get("object_color", "")).lower()
+    for color in color_keywords:
+        if color in query_lower:
+            qcolor = "gray" if color == "grey" else color
+            if obj_color == qcolor:
+                boosted_score += 0.15
+            else:
+                boosted_score -= 0.05
+            break
+            
+    return boosted_score
+
+def _semantic_scroll(client, collection_name, text_embedding, vector_keys, video_id, text_query=None, top_k=10, limit=1000):
     if client is None:
         raise Exception("Qdrant client not initialized")
 
@@ -88,11 +131,16 @@ def _semantic_scroll(client, collection_name, text_embedding, vector_keys, video
         if vec_np.size == 0 or vec_np.shape[0] != text_embedding.shape[0]:
             continue
 
-        sim = np.dot(text_embedding, vec_np) / (np.linalg.norm(text_embedding) * np.linalg.norm(vec_np) + 1e-8)
+        sim = float(np.dot(text_embedding, vec_np) / (np.linalg.norm(text_embedding) * np.linalg.norm(vec_np) + 1e-8))
+        payload = point.payload if hasattr(point, "payload") else {}
+        
+        if text_query and collection_name == 'object_tracks':
+            sim = _apply_object_query_boosts(text_query, payload, sim)
+            
         results.append({
             "id": point.id,
-            "score": float(sim),
-            "payload": point.payload if hasattr(point, "payload") else {}
+            "score": sim,
+            "payload": payload
         })
 
     results.sort(key=lambda r: r["score"], reverse=True)
@@ -302,6 +350,7 @@ def handle_text_query(request, client, clip_model, clip_module, device):
         text_embedding=text_embedding,
         vector_keys=['clip_vec', 'multi_vec'],
         video_id=video_id,
+        text_query=text_query,
         top_k=top_k,
         limit=1000
     )
